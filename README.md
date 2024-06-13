@@ -21,8 +21,4 @@ To run the code in this repository, you will need to have the following software
 
 R (version 4.0.3 or higher)
 RStudio (version 1.4.1106 or higher)
-The following R packages: dplyr, ggplot2, tidyr, readr, knitr, kableExtra, tseries, forecast, tseries, vars, urca, lmtest, zoo
-You can install the required packages by running the following command in R:
-
-
-install.packages(c("dplyr", "ggplot2", "tidyr", "readr", "knitr", "kableExtra", "tseries", "forecast", "vars", "urca", "lmtest", "zoo"))
+The following R packages: dplyr, ggplot2, tidyr, readr, knitr, kableExtra, tseries, forecast, tseries, vars, urca, lmtest
