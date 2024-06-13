@@ -1,0 +1,47 @@
+
+```{r}
+# Set parameters
+theta_true <- 3
+n <- 1000  # sample size
+N_attempts <- 1000  # number of simulation attempts
+
+# Function to calculate MLE for Poisson distribution
+mle_poisson <- function(data) {
+  mean(data)
+}
+
+# Initialize vector for results
+results <- numeric(N_attempts)
+
+# Simulate and calculate MLE multiple times
+for (i in 1:N_attempts) {
+  simulated_data <- rpois(n, lambda = theta_true)
+  theta_ML <- mle_poisson(simulated_data)
+  results[i] <- sqrt(n) * (theta_ML - theta_true)/sqrt(theta_ML)
+}
+
+# Plot histogram
+hist(results, main = "Histogram of sqrt(n)(theta_ML - theta)/sqrt(theta_ML)", col = "lightblue", xlab = "Standardized Variable")
+abline(v = 0, col = "red", lwd = 2)
+
+
+```
+
+```{r}
+# QQ-Plot against a standardized normal distribution
+qqnorm(results)
+qqline(results, col = "red", lwd = 2)
+```
+
+```{r}
+# Optional: Conduct a Shapiro-Wilk test for normality
+shapiro.test(results)
+
+```
+
+Since the p-value is greater than the commonly chosen significance level of 0.05, you would not reject the null hypothesis. This means that, based on the Shapiro-Wilk test, there is no strong evidence to suggest that the data significantly deviates from a normal distribution.
+
+
+The p-value obtained in this analysis exceeds the commonly accepted threshold of 0.05, a standard significance level in statistical tests. Consequently, this leads us to retain the null hypothesis. The implication of not rejecting the null hypothesis, particularly in the context of the Shapiro-Wilk test, is significant. It indicates that the evidence is not strong enough to conclude that the data deviate significantly from a normal distribution.
+
+In simpler terms, as the p-value is higher than 0.05, it suggests that the observed data are consistent enough with a normal distribution.

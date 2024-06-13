@@ -1,0 +1,263 @@
+---
+title: "HOMEWORK_PART_2"
+author: "SAMUEL_SOLAL_UGO"
+date: "2023-11-30"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## QUESTION 1: Load the season-1718_csv file and describe what it contains. 
+## • What do the variables FTHG, FTAG, FTR correspond to?
+
+```{r}
+data <- read.table("season-1718_csv.csv", header = T,  sep = ",")
+View(data)
+summary(data)
+str(data)
+```
+
+Description of the data: The data corresponds to all the games of the English Premier League during the 2017-2018 season. It describes different data of each games: The division is always the same as it is premier league(E0), the date of each game, the name of the home and the away teams with their respective goals score and the result of the game (FTHG= Final Time Home Goals, FTAG = Final Time Away Goals, FTR = Final Time Results). Then there are other data for each game such as the half time number of goals, the referee name, the number of strikes, strikes on target, fouls, corners, yellow and red card corresponding to each team. There are at the end a lot of bet data with the odds of betting for home team, draw or away from different betting websites probably.The max and the average odds for each type of results.
+
+ The dataset is composed of 7 characters columns, 19 integer columns, 39 float columns. 
+
+
+
+## QUESTION 2: Compute the number of points over the season of each team (victory = 3 points, draw= 1 point), the number of points in “home” matches, the number of points in “away” matches.
+
+```{r}
+
+Home_Points <- ifelse(data$FTR == "H" , 3 , ifelse(data$FTR == "D", 1, 0))
+
+Away_Points <- ifelse(data$FTR == "A", 3, ifelse(data$FTR == "D", 1 , 0))
+
+data <- cbind(data, Home_Points, Away_Points)
+summary(data)
+```
+
+## 
+
+```{r}
+
+home_points <- aggregate(Home_Points ~ HomeTeam, data = data, FUN = sum)
+names(home_points)[names(home_points) == "Home_Points"] <- "TotalHomePoints"
+
+away_points <- aggregate(Away_Points ~ AwayTeam, data = data, FUN = sum)
+names(away_points)[names(away_points) == "Away_Points"] <- "TotalAwayPoints"
+
+total_points <- merge(home_points, away_points, by.x = "HomeTeam", by.y = "AwayTeam")
+
+total_points$TotalPoints <- total_points$TotalHomePoints + total_points$TotalAwayPoints
+
+summary(total_points)
+View(total_points)
+
+```
+```{r}
+total_points_sorted <- total_points[order(-total_points$TotalPoints),]
+View(total_points_sorted)
+```
+
+## How many points did Arsenal score
+```{r}
+arsenal_points <- total_points_sorted[total_points_sorted$HomeTeam == "Arsenal",]$TotalPoints
+arsenal_points
+```
+
+## What was Arsenal's rank
+
+```{r}
+arsenal_rank <- which(total_points_sorted$HomeTeam == "Arsenal")
+arsenal_rank
+```
+
+## Compare the histogram of the total number of points at home and away
+
+```{r}
+hist(total_points$TotalHomePoints)
+hist(total_points$TotalAwayPoints)
+```
+Comparing the histogram of the total number of points at home and away, we can see that 8 of 20 teams took between 25 and 30 points during home games, then there are 5 teams under 25 points and 7 teams over 30 points with 3 teams that took between 45 and 50 points at home. On the other side, most of the teams took less than 20 points playing away games with 14 teams between 10 and 20 points. 5 teams are around 30 points and only 1 teams at 50 points (not surprising Man City). We can well see the impact of playing at home or away with these two histograms.
+
+
+## Fit a density to those histograms.
+
+```{r}
+# Convert data to long format for ggplot
+library(tidyr)
+library(ggplot2)
+total_points_long <- gather(total_points, key = "Type", value = "Points", TotalHomePoints, TotalAwayPoints)
+
+ggplot(total_points_long, aes(x = Points, fill = Type)) +
+  geom_histogram(aes(y = after_stat(density)), binwidth = 3, alpha = 0.5, position = 'identity') +
+  geom_density(alpha = 0.7, adjust = 1) +
+  facet_wrap(~Type, scales = 'free_y') +
+  labs(x = "Total Points", y = "Density", fill = "Match Type") +
+  ggtitle("Histogram and Density of Total Home and Away Points") +
+  theme_minimal()
+```
+
+# QUESTION 3 (à reecrire en latex après confirmation)
+## Write the statistical model associated to the observation of n match results. Do you think it is a realistic model?
+
+Our statistical model is described by the set or probability distribution {P_theta, theta in Omega} where Omega in R+* represents the parameter space and {P_theta} the poisson distribution.
+Let (x1, ..., xn) and (y1, ..., yn) be our n observations of the X1, ..., Xn (FTHG) and Y1, ..., Yn (FTAG) random variables. For any i=1,...,n, Xi follows a Poisson(lambda) and Yi follows a Poisson(mu).
+
+Model Realistic ?? The poisson law is a discrete distribution that describes the behaviour of the number of events that happen within a certain amount of time. For that reason, this model is realistic since we are looking at the number of goals within 90min. However, we should maybe focus on a specific team because each team has its own level and its own probability to score.
+
+In order to estimate lambda and mu we can use the MLE estimator as seen in Part 1.
+
+# QUESTION 4 
+```{r}
+# to execute just once
+attach(data)
+```
+## Compute the empirical mean and variance of the number of goals of 1)the visiting team 2) the home team.
+## Compute the MLE estimators (of λ, μ) for the Poisson model.
+
+```{r}
+# empirical mean
+empirical_mean_goals_home_team <- mean(FTHG)
+empirical_mean_goals_away_team <- mean(FTAG)
+
+# variance
+variance_goals_home_team <- var(FTHG)
+variance_goals_away_team <- var(FTAG)
+
+# MLE Estimators
+lambda_hat <- empirical_mean_goals_home_team
+mu_hat <- empirical_mean_goals_away_team
+
+cat("empircal mean for goals of home teams :", empirical_mean_goals_home_team, "\n")
+cat("empircal mean for goals of away teams :", empirical_mean_goals_away_team, "\n\n")
+
+cat("variance for goals of home teams :", variance_goals_home_team, "\n")
+cat("variance for goals of away teams :", variance_goals_away_team, "\n\n")
+
+cat("MLE estimator lambda_hat of the Poisson model for FTHG :", lambda_hat, "\n")
+cat("MLE estimator mu_hat of the Poisson model for FTAG :", mu_hat, "\n\n")
+
+```
+## Does the Poisson assumption look correct?
+
+
+```{r}
+# We compare FTHG and the estimated Poisson model : Pois(lambda_hat)
+
+# comparison on the density
+simulated_data <- rpois(length(FTHG), lambda_hat)
+plot(density(FTHG), main = "density of FTHG compared to a Poisson distribution with lambda = lambda_hat")
+lines(density(simulated_data), col='red')
+legend("topright", legend = c("FTHG", "Poisson distribution with parameter lambda_hat"), col = c("black", "red"), lwd = 2)
+
+
+```
+
+As we see above, the density of our data FTHG is similar to a poisson distribution with parameter lambda = lambda_hat
+
+```{r}
+# We compare FTAG and the estimated Poisson model : Pois(mu_hat)
+
+# comparison on the density
+simulated_data <- rpois(length(FTAG), mu_hat)
+plot(density(FTAG), main = "density of FTAG compared to a Poisson distribution with lambda = mu_hat")
+lines(density(simulated_data), col='red')
+legend("topright", legend = c("FTAG", "Poisson distribution with parameter mu_hat"), col = c("black", "red"), lwd = 2)
+```
+
+As we see above, the density of our data FTAG is similar to a poisson distribution with parameter lambda = mu_hat
+
+
+# QUESTION 5
+## Compute the confidence intervals for λ derived at question 7 (part 1), and a similar confidence interval for μ.
+```{r}
+conf_int_student <- function(x, alpha){
+  n <- length(x)
+  q_alpha <- qnorm(1-alpha/2)
+  xbar = mean(x)
+  Sn <- xbar/n
+  CI <- c(xbar - sqrt(Sn)*q_alpha, xbar + sqrt(Sn)*q_alpha)
+  return(CI)
+}
+
+cat("confidence interval at a 95 level for lambda : ", conf_int_student(FTHG, 0.05),  "\n")
+cat("confidence interval at a 95 level for mu : ", conf_int_student(FTAG, 0.05),  "\n")
+```
+## Do you think the distribution of the number of goals scored by the home team and the visiting team is the same?
+
+The distribution of the number of goals scored by the home team and the visiting team are clearly not the same since the intersection of the confidence intervals for their parameters lambda and mu is null. 
+
+
+# QUESTION 6
+
+## What would be the best approach to answer the previous question? Formalize the problem as a testing problem.
+
+To formally test whether the distribution of the number of goals scored by the home team is the same as that of the visiting team, you can set up a hypothesis testing framework. Here's how we can set up the testing problem:
+Hypotheses:
+Null Hypothesis (H0): The mean goal rate for the home team (λ) is equal to the mean goal rate for the visiting team (μ).
+Alternative Hypothesis (H1): The mean goal rate for the home team (λ) is not equal to the mean goal rate for the visiting team (μ).
+H0: λ=μ  vs H1: λ≠μ
+Therefore, the best approach to answer the previous answer is to do a two sample t-test which is a method used to test whether the unknown population means of two groups are equal or not.
+
+
+## Use a t.test to give a more precise answer.
+```{r}
+t_test_result <- t.test(FTHG, FTAG)
+
+# Print the results
+print(t_test_result)
+
+
+```
+## Comment on the assumptions of such a test. Are they valid, “nearly valid”, or problematic?
+You can use the test when your data values are independent, are randomly sampled from two normal populations and the two independent groups have equal variances.
+
+```{r}
+## Answeerr the question 
+
+
+
+
+```
+
+
+
+## What is the p-value of the test? What does that mean?
+The p-value if the t-test is 3.018e-05. It means that the probability to observe under HO a more extreme value of the satistic (used in the t-test)
+
+## If you want a test of level α = 0.05, do you accept or reject the null hypothesis?
+Here the p-value is very small (3.018e-05). Here, the p-value is such that p-val< α (for α = 0.05)
+This indicates that the mean goal rates for the home and visiting teams are significantly different and that we should reject H0. It suggests that the distributions of the number of goals scored by the home team and the visiting team are not the same.
+
+
+# QUESTION 7
+## Create two vectors ManCity and Liverpool containing the goals scored during the season, both away and home.
+```{r}
+ManCity <- c(data$FTHG[data$HomeTeam == "Man City"], data$FTAG[data$AwayTeam == "Man City"])
+Liverpool <- c(data$FTHG[data$HomeTeam == "Liverpool"], data$FTAG[data$AwayTeam == "Liverpool"])
+
+
+```
+
+## Formalise the previous question as a testing problem and use a t.test to answer it.
+Null Hypothesis (H0): The mean goal rate for Manchester City (μManCity) is equal to the mean goal rate for Liverpool (μLiverpool).
+Alternative Hypothesis (H1): The mean goal rate for Manchester City (
+μManCity) is not equal to the mean goal rate for Liverpool (μLiverpool).
+H0: μManCity = μLiverpool vs  H1: μManCity ≠ μLiverpool
+
+```{r}
+# Perform the t-test
+t_test_result <- t.test(ManCity, Liverpool)
+t_test_result
+```
+
+
+##If you want a test of level α = 0.05, do you accept or reject the null hypothesis? How would you conlude on which team has the best offence for the season 2017/2018?
+
+
+
+
